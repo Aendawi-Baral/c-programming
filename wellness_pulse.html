@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wellness Pulse | Professional Health Tracker</title>
+
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+
+<style>
+  :root{
+    /* Pastel palette (no pink/purple/red) */
+    --blue-100:#F0F8FF;  /* background */
+    --blue-300:#B3D9FF;  /* accents */
+    --blue-500:#6CB6FF;  /* chart line */
+    --green-100:#CDECCF; /* cards */
+    --green-500:#78C091; /* chart line */
+    --yellow-100:#FFF6B3;/* cards/chips */
+    --yellow-500:#E6C657;/* chart line */
+    --grey-050:#F7FAFC;  /* container bg */
+    --grey-100:#E6EEF2;  /* dividers */
+    --grey-600:#3A4A55;  /* text */
+    --teal-500:#53C1B0;  /* chart line */
+    --shadow:0 20px 50px rgba(0,0,0,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:'Poppins',sans-serif;
+    background: linear-gradient(135deg, var(--blue-100), var(--grey-100));
+    color:var(--grey-600);
+    padding:20px;
+  }
+  .container{
+    max-width:1200px;margin:auto;background:#fff;border-radius:20px;padding:30px;box-shadow:var(--shadow);
+  }
+  .header{ text-align:center; margin-bottom:30px; position:relative;}
+  .logo{ font-size:3.2rem; color:var(--blue-300); margin-bottom:8px; }
+  h1{ margin:0 0 6px 0; letter-spacing:.3px; }
+  .title-glow{
+    display:inline-block; padding:6px 16px; border-radius:16px;
+    background:linear-gradient(90deg, var(--blue-300), var(--green-100));
+    position:relative; color:#1d3557;
+    box-shadow:0 0 18px rgba(108,182,255,.45), 0 0 28px rgba(120,192,145,.35);
+    animation:pulseGlow 3s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{ 0%,100%{box-shadow:0 0 14px rgba(108,182,255,.35),0 0 22px rgba(120,192,145,.28)}
+                         50%{box-shadow:0 0 22px rgba(108,182,255,.55),0 0 34px rgba(120,192,145,.45)} }
+  .people-list{ text-align:center; margin-bottom:18px; }
+  .people-list select{
+    padding:10px 12px;border-radius:10px;border:2px solid var(--grey-100);background:var(--grey-050);outline:none;
+  }
+
+  .dashboard{ display:grid; grid-template-columns:1fr; gap:24px;}
+  @media (min-width: 900px){ .dashboard{ grid-template-columns:1fr 1fr; } }
+
+  .card{
+    background:var(--grey-050); border-radius:16px; padding:22px;
+    box-shadow:0 10px 28px rgba(0,0,0,.08); transition:transform .25s ease;
+  }
+  .card:hover{ transform:translateY(-4px);}
+  .card h2{ margin:0 0 14px 0; display:flex; align-items:center; gap:10px;}
+  .card h2 i{ color:var(--blue-300);}
+
+  label{ display:block; margin:10px 0 6px; font-weight:600; }
+  input,button{
+    width:100%; padding:10px 12px; border:2px solid var(--grey-100);
+    border-radius:10px; font-size:1rem; background:#fff; color:var(--grey-600);
+  }
+  input:focus{ border-color:var(--blue-300); outline:none; box-shadow:0 0 0 3px rgba(108,182,255,.15);}
+
+  .rating{ display:flex; gap:10px; margin:6px 0 14px;}
+  .rating-btn{
+    flex:1; padding:10px; border:2px solid var(--grey-100); background:#fff; border-radius:10px;
+    cursor:pointer; transition:all .2s; text-align:center; font-size:1.05rem; user-select:none;
+  }
+  .rating-btn:hover{ background:var(--blue-100);}
+  .rating-btn.active{ background:var(--blue-300); color:#08304b; border-color:var(--blue-300); font-weight:600;}
+
+  .btn-primary{
+    background:linear-gradient(135deg, var(--blue-300), var(--green-100)); border:none; color:#10314d;
+    font-weight:700; cursor:pointer; box-shadow:0 8px 18px rgba(108,182,255,.25);
+  }
+  .btn-primary:hover{ filter:brightness(1.03);}
+  .btn-secondary{ background:var(--grey-100); font-weight:600; }
+
+  .feedback{ background:var(--grey-050); border-radius:16px; padding:22px; margin-top:26px; box-shadow:0 10px 25px rgba(0,0,0,.08); display:none;}
+  .feedback h3{ margin:0 0 14px 0; color:#1f3b4d;}
+  .welcome{ font-size:1.05rem; margin-bottom:10px; }
+
+  .pill{ display:inline-block; padding:8px 14px; border-radius:16px; margin-right:8px; font-weight:700; }
+  .pill-blue{ background:var(--blue-100); }
+  .pill-green{ background:var(--green-100); }
+  .pill-yellow{ background:var(--yellow-100); }
+  .pill-grey{ background:var(--grey-100); }
+
+  .category{ border-left:6px solid; border-radius:12px; padding:14px 14px 14px 14px; margin:12px 0; }
+  .cat-gut{ border-color:var(--green-500); background:#eef9f0;}
+  .cat-sleep{ border-color:var(--blue-500); background:#eef6ff;}
+  .cat-mental{ border-color:#7aa6a2; background:#eef9f8;}
+  .cat-hydration{ border-color:var(--teal-500); background:#eaf9f7;}
+  .cat-bmi{ border-color:#8fb26e; background:#f2f8ec;}
+  .cat-score{ border-color:var(--yellow-500); background:#fffae6;}
+
+  .category p{ margin:6px 0; line-height:1.55; }
+  .category a{ color:#0b63b6; text-decoration:none; font-weight:600; }
+  .category a:hover{ text-decoration:underline; }
+
+  .charts{ display:grid; grid-template-columns:1fr; gap:20px; margin-top:22px;}
+  @media (min-width: 900px){ .charts{ grid-template-columns: 1.2fr .8fr; } }
+  .chart-container{ background:#fff; border-radius:12px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,.08); }
+  /* make chart visually smaller */
+  canvas#combinedChart{ width:100% !important; height:160px !important; max-height:180px !important; }
+
+  /* Calendar */
+  .calendar-card{ background:#fff; border-radius:12px; padding:16px; box-shadow:0 10px 25px rgba(0,0,0,.08);}
+  .cal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-nav button{ width:auto; padding:8px 12px; }
+  .calendar{ display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; }
+  .cal-cell{
+    border:2px solid var(--grey-100); border-radius:10px; min-height:82px; padding:8px; background:var(--grey-050);
+    display:flex; flex-direction:column; justify-content:space-between; cursor:pointer; transition:transform .15s ease;
+  }
+  .cal-cell:hover{ transform:translateY(-2px); }
+  .cal-day{ font-size:.9rem; font-weight:700; }
+  .score-chip{
+    margin-top:6px; align-self:flex-start; padding:4px 8px; border-radius:12px; font-size:.8rem; font-weight:700; color:#1f2a33;
+  }
+  .chip-blue{ background:var(--blue-100);}
+  .chip-green{ background:var(--green-100);}
+  .chip-yellow{ background:var(--yellow-100);}
+  .chip-grey{ background:var(--grey-100);}
+
+  /* Toast */
+  .toast{ position:fixed; bottom:20px; right:20px; background:#1b3a57; color:#fff; padding:10px 14px; border-radius:10px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transform:translateY(10px); transition:all .25s ease;}
+  .toast.show{ opacity:1; pointer-events:auto; transform:none;}
+
+  /* Modal for extra tips */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:1000;}
+  .modal{ background:#fff; border-radius:16px; max-width:700px; width:92%; padding:18px 18px 14px; box-shadow:var(--shadow);}
+  .modal h4{ margin:0 0 8px 0;}
+  .modal p{ margin:6px 0; line-height:1.55;}
+  .modal .actions{ display:flex; justify-content:flex-end; margin-top:8px;}
+  .modal .actions button{ width:auto; }
+
+  /* Food chips */
+  .food-visual{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .food-item{ background:var(--blue-300); color:#08304b; padding:6px 12px; border-radius:16px; font-size:.9rem; font-weight:700; cursor:default;}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🌿 🚀</div>
+      <h1><span class="title-glow">Wellness Pulse</span></h1>
+      <p>Understanding how food impacts our mood, gut health, immunity and overall wellness 🌱</p>
+    </div>
+
+    <div class="people-list">
+      <label for="personSelect">Switch to Saved Person:</label>
+      <select id="personSelect">
+        <option value="">— Select Person —</option>
+      </select>
+    </div>
+
+    <div class="dashboard">
+      <!-- Personal Profile -->
+      <div class="card">
+        <h2><i class="fas fa-user-circle"></i> Personal Profile</h2>
+        <label for="name">Your Name</label>
+        <input type="text" id="name" placeholder="Enter your name" required>
+
+        <label for="age">Age</label>
+        <input type="number" id="age" min="18" max="100" placeholder="Enter your age" required>
+
+        <label for="height">Height (feet)</label>
+        <input type="number" id="height" min="4" max="8" step="0.1" placeholder="e.g., 5.8" required>
+
+        <label for="weight">Weight (kg)</label>
+        <input type="number" id="weight" min="30" max="200" placeholder="Your weight" required>
+      </div>
+
+      <!-- Daily Wellness -->
+      <div class="card">
+        <h2><i class="fas fa-heartbeat"></i> Daily Wellness</h2>
+
+        <label for="food">What did you eat today? (comma separated with quantities)</label>
+        <input type="text" id="food" placeholder="e.g., 1 apple, 2 yogurt, 1 chicken breast, 100g oats" required>
+
+        <label for="water">Water Intake (L)</label>
+        <input type="number" id="water" min="0" max="10" step="0.5" placeholder="e.g., 2.5" required>
+
+        <label for="sleep">Hours of Sleep</label>
+        <input type="number" id="sleep" min="0" max="24" step="0.5" placeholder="7.5 hours" required>
+
+        <label for="medications">Medications & Supplements</label>
+        <input type="text" id="medications" placeholder="e.g., vitamin D, none">
+
+        <label>Mental Wellbeing (How are you feeling right now?)</label>
+        <div class="rating" id="mentalRating">
+          <button type="button" class="rating-btn" data-value="1">😢 1</button>
+          <button type="button" class="rating-btn" data-value="3">😔 3</button>
+          <button type="button" class="rating-btn active" data-value="5">😐 5</button>
+          <button type="button" class="rating-btn" data-value="7">🙂 7</button>
+          <button type="button" class="rating-btn" data-value="9">😄 9</button>
+        </div>
+        <input type="hidden" id="mental" value="5">
+
+        <label for="symptoms">Symptoms (if any)</label>
+        <input type="text" id="symptoms" placeholder="e.g., bloating, headache, fatigue">
+
+        <button type="button" id="submitBtn" class="btn-primary">Analyze My Wellness 🌟</button>
+        <button type="button" id="saveBtn" class="btn-secondary">💾 Save This Person & Reset Form</button>
+      </div>
+    </div>
+
+    <div id="feedback" class="feedback"></div>
+
+    <div class="charts">
+      <div class="chart-container">
+        <h3>📊 Combined Wellness Trends</h3>
+        <canvas id="combinedChart" height="160"></canvas>
+      </div>
+      <div class="calendar-card">
+        <div class="cal-header">
+          <h3>📅 Wellness Calendar</h3>
+          <div class="cal-nav">
+            <button id="prevMonth" class="btn-secondary">◀ Prev</button>
+            <button id="todayBtn" class="btn-secondary">Today</button>
+            <button id="nextMonth" class="btn-secondary">Next ▶</button>
+          </div>
+        </div>
+        <div id="calendarGrid" class="calendar"></div>
+        <div style="margin-top:10px;font-size:.9rem;">
+          <strong>Legend:</strong>
+          <span class="score-chip chip-grey">No data</span>
+          <span class="score-chip chip-yellow">0–49</span>
+          <span class="score-chip chip-blue">50–79</span>
+          <span class="score-chip chip-green">80–100</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Saved!</div>
+
+  <!-- Tips Modal -->
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <h4 id="modalTitle">Helpful tips 💡</h4>
+      <div id="modalBody"></div>
+      <div class="actions">
+        <button id="modalClose" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ---------- Utils ----------
+const YT_GUT = "https://youtu.be/E3QpXj_QOqQ?si=AYJzlaqdXf8v8zHf";
+const YT_SLEEP = "https://youtu.be/tIq3AGBXTwQ?si=aImlEhKJN6pvhbm_";
+const YT_MENTAL = "https://youtu.be/bkRuRfjNQr4?si=TaVbAX3-JTk607JF";
+const YT_BMI = "https://youtu.be/KFbeFLLJbWo?si=Tzeai0hbFGsx10a3";
+
+const $ = sel => document.querySelector(sel);
+const $all = sel => Array.from(document.querySelectorAll(sel));
+
+const LS_KEY = 'multiWellnessData';
+const loadData = () => JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+const saveData = (obj) => localStorage.setItem(LS_KEY, JSON.stringify(obj));
+
+let currentPerson = '';
+
+function showToast(msg="Saved!") {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 1600);
+}
+
+// ---------- Mood Buttons ----------
+const mentalButtons = $all('#mentalRating .rating-btn');
+const mentalInput = $('#mental');
+mentalButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    mentalButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mentalInput.value = btn.dataset.value;
+  });
+});
+
+// ---------- Submit Form ----------
+$('#submitBtn').addEventListener('click', ()=>{
+  const person = $('#name').value.trim();
+  if(!person){ alert('Enter a name first'); return; }
+  currentPerson = person;
+
+  const age = parseInt($('#age').value),
+        height = parseFloat($('#height').value),
+        weight = parseFloat($('#weight').value),
+        water = parseFloat($('#water').value),
+        sleep = parseFloat($('#sleep').value),
+        mental = parseInt($('#mental').value),
+        food = $('#food').value.split(',').map(f=>f.trim()).filter(Boolean),
+        meds = $('#medications').value.trim(),
+        symptoms = $('#symptoms').value.trim();
+
+  const score = Math.round(Math.min(100, (water/2*10 + sleep/8*25 + mental*10 + (food.length*3))/1.1)); // simple scoring
+  const bmi = +(weight/Math.pow(height*0.3048,2)).toFixed(1);
+
+  const rec = {person, age,height,weight,water,sleep,mental,food,meds,symptoms,score,bmi,date:new Date().toISOString().slice(0,10),time:new Date().toLocaleTimeString()};
+
+  const data = loadData();
+  if(!data[person]) data[person]=[];
+  data[person].push(rec);
+  saveData(data);
+
+  renderFeedback(rec);
+  renderChart();
+  renderCalendar();
+  populatePeopleList();
+});
+
+// ---------- Modal helpers ----------
+const modalBackdrop = $('#modalBackdrop');
+const modalTitle = $('#modalTitle');
+const modalBody  = $('#modalBody');
+$('#modalClose').addEventListener('click', ()=> modalBackdrop.style.display='none');
+modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) modalBackdrop.style.display='none'; });
+function openModal(title, html){ modalTitle.textContent = title; modalBody.innerHTML = html; modalBackdrop.style.display='flex'; }
+
+// ---------- Streak calculations ----------
+function calculateStreaks(person){
+  const data = loadData();
+  if(!person || !data[person] || data[person].length===0) return {logStreak:0,hydrationStreak:0,sleepStreak:0};
+  // unique dates sorted descending
+  const entries = [...data[person]].sort((a,b)=> new Date(b.date) - new Date(a.date));
+  const seenDates = [...new Set(entries.map(e=>e.date))];
+  // logStreak: consecutive dates from latest
+  let logStreak = 0;
+  let cur = new Date(seenDates[0]);
+  for(let i=0;i<seenDates.length;i++){
+    const expected = new Date(); expected.setFullYear(cur.getFullYear(), cur.getMonth(), cur.getDate());
+    const sd = new Date(seenDates[i]);
+    if(Math.abs((cur - sd)/(1000*60*60*24))<=0.5){ logStreak++; cur.setDate(cur.getDate()-1); } else break;
+  }
+  // hydration streak: consecutive entries from latest where water >=2
+  let hydrationStreak=0; for(let i=0;i<entries.length;i++){ const e=entries[i]; if(e.water>=2) hydrationStreak++; else break; }
+  // sleep streak: consecutive entries from latest where sleep >=7
+  let sleepStreak=0; for(let i=0;i<entries.length;i++){ const e=entries[i]; if(e.sleep>=7) sleepStreak++; else break; }
+  return {logStreak,hydrationStreak,sleepStreak};
+}
+
+// ---------- Modal content for tips ----------
+function getModalContent(topic, rec){
+  switch(topic){
+    case 'gut': return {title:'Gut & Meal Ideas', html:`<p>Quick meal swaps and ideas🍽️:</p><ul><li>Breakfast: oats + yogurt + 🍎apples + seeds🥣.</li><li>Lunch: grilled chicken/paneer🍗 + big salad + brown rice🥗.</li><li>Dinner: lentil soup🍲 + steamed veggies🥦 + chapati.</li><li>Snacks: fruit + 🥜nuts, hummus + veg🥬.</li></ul>`};
+    case 'sleep': return {title:'Sleep Routine (15–30 min)', html:`<ol><li>Dim lights, stop screens 60 min before bed🛌.</li><li>Light stretch + breathing 🧘‍♀️ (4-7-8 ×4).</li><li>Write 3 quick priorities for tomorrow to clear your mind and add meditationn to your daily routine🌿.</li></ol>`};
+    case 'hydration': return {title:'Hydration Tricks', html:`<ul><li>Use a 750ml bottle and track refills🥛.</li><li>Set phone reminder or drink after every bathroom break🤳.</li><li>Add citrus or cucumber slices to make it tastier🍋.</li></ul>`};
+    case 'mental': return {title:'Mood Boosters', html:`<ul><li>Take a 10-minute calming walk or play with pets🐕.</li><li>5-minute gratitude journaling 📝.</li><li>Call a friend🫂 or listen to an upbeat song🎶.</li></ul>`};
+    case 'bmi': return {title:'BMI Actions', html:`<ul><li>Protein every meal (eggs, lentils, chicken).</li><li>Replace sugary drinks with water or tea🫖.</li><li>Daily 20–30 min movement 🏃‍♂️+ 2x strength sessions a week🏋️‍♂️ .</li></ul>`};
+    default: return {title:'Tips', html:'<p>Small consistent actions win🏅. Pick one habit and repeat for 7 days.</p>'};
+  }
+}
+
+// ---------- Feedback Rendering (long & actionable) ----------
+function renderFeedback(rec){
+  const fb = $('#feedback');
+  const foodHtml = rec.food.map(f=>`<span class="food-item">${f}</span>`).join('') || '<span class="pill pill-grey">No food logged</span>';
+
+  // basic food flags
+  const lower = rec.food.map(x=>x.toLowerCase());
+  const hasProtein = lower.some(f=>/(chicken|egg|fish|tofu|paneer|lentil|bean|yogurt|milk)/.test(f));
+  const hasFiber = lower.some(f=>/(oat|oats|apple|pear|banana|veggie|vegetable|salad|greens|broccoli|spinach|beans|lentil|chia|flax|whole|brown rice)/.test(f));
+  const hasUltra = lower.some(f=>/(fries|chips|cookie|soda|soft drink|candy|instant|noodle|pastry|dessert|fried)/.test(f));
+  const hasFerment = lower.some(f=>/(yogurt|curd|kefir|kimchi|sauerkraut|pickle)/.test(f));
+
+  // streaks
+  const streaks = calculateStreaks(currentPerson || rec.person);
+
+  // messages
+  const overallMsg = rec.score>=80 ? 'Excellent🏆 — you are in the green! Keep the momentum going.' : rec.score>=50 ? 'Good progress🌟 — a few focused tweaks will boost your score.' : 'This is a starting point — focus on 1–2 small habits this week🏅.';
+  const hydrationMsg = rec.water>=2 ? 'Great👏 — hydration supports everything from concentration to digestion💧.' : `You are ${ (2 - (rec.water||0)).toFixed(1) }L below a simple 2L target🥛 — small sips hourly help.`;
+  const sleepMsg = rec.sleep>=7 ? 'Nice — your restorative sleep supports recovery and mood💤 .' : `Try adding 15–30 minutes to your sleep🛌 or start a wind-down routine.`;
+  const mentalMsg = rec.mental>=7 ? 'Mood looks strong💪 — continue brief daily practices to maintain it.' : 'Consider 5–10 minutes of breathing 🧘‍♀️ or a short walk to reset your mood.';
+
+  // compose
+  const html = `
+    <div class="welcome">Hey <strong>${rec.person}</strong>! Here's a detailed, actionable report for <strong>${rec.date}</strong> at <strong>${rec.time}</strong> — long form, so you can read and pick one thing to try today 🌟</div>
+
+    <div class="category cat-score">
+      <p><strong>Overall Wellness Score:</strong> <span class="pill pill-yellow">${rec.score} / 100</span></p>
+      <p>${overallMsg}</p>
+      <p>Streaks: <span class="pill pill-blue">Logged ${streaks.logStreak} day(s)</span> <span class="pill pill-green">Hydration ${streaks.hydrationStreak} day(s)</span> <span class="pill pill-blue">Sleep ${streaks.sleepStreak} day(s)</span></p>
+      <p><button class="tip-btn" data-tip="overall">How to improve this week</button></p>
+    </div>
+
+    <div class="category cat-gut">
+      <p><strong>Gut & Food:</strong></p>
+      <div class="food-visual">${foodHtml}</div>
+      <p>${ hasProtein ? '✅ Protein present💪 — good for satiety and muscle.' : '➕ Add a protein source🍗 (eggs, lentils, chicken, tofu).' }</p>
+      <p>${ hasFiber ? '✅ Fiber present🥗 — helps digestion.' : '➕ Add fiber🥦: whole grains, fruits, beans, or vegetables.' }</p>
+      <p>${ hasFerment ? '✅ Fermented food detected🥣 — nice for gut diversity.' : '➕ Consider small amounts of yogurt/curd or fermented veg🥬.' }</p>
+      ${ hasUltra ? '<p>⚠️ There are some ultra-processed items 🍕— try swapping one snack today🍎.</p>' : '' }
+      <p>Quick actions: aim for a protein + veg + whole-carb plate, and include one fermented food each day if tolerated.</p>
+      <p><a href="${YT_GUT}" target="_blank">Watch Gut Health Guide 🎥</a> — <button class="tip-btn" data-tip="gut">Meal ideas</button></p>
+    </div>
+
+    <div class="category cat-hydration">
+      <p><strong>Hydration:</strong> ${isNaN(rec.water)?0:rec.water} L</p>
+      <p>${hydrationMsg}</p>
+      <p>Small habit: keep a 750ml bottle💧🥤 — refill it twice to hit ~1.5L, three times for 2.25L.</p>
+      <p><button class="tip-btn" data-tip="hydration">Hydration hacks</button></p>
+    </div>
+
+    <div class="category cat-sleep">
+      <p><strong>Sleep:</strong> ${isNaN(rec.sleep)?0:rec.sleep} hrs</p>
+      <p>${sleepMsg}</p>
+      <p>Tonight: dim screens an hour before bed,💤 try a 10-minute wind-down and consistent wake time.</p>
+      <p><a href="${YT_SLEEP}" target="_blank">Watch Sleep Tips 🎥</a> — <button class="tip-btn" data-tip="sleep">Wind-down routine</button></p>
+    </div>
+
+    <div class="category cat-mental">
+      <p><strong>Mental Wellbeing:</strong> ${rec.mental}/10</p>
+      <p>${mentalMsg}</p>
+      <p>Try: 4-7-8 breathing, 5-min journaling🌟, or a quick sunlight walk or play with pets🐶.</p>
+      <p><a href="${YT_MENTAL}" target="_blank">Mental Health Video 🎥</a> — <button class="tip-btn" data-tip="mental">Mood boosters</button></p>
+    </div>
+
+    <div class="category cat-bmi">
+      <p><strong>BMI:</strong> ${rec.bmi}</p>
+      <p>Use BMI as a rough guide⚖️. Focus on strength, mobility and how you feel🏋️‍♂️.</p>
+      <p><a href="${YT_BMI}" target="_blank">BMI Reference 🎥</a> — <button class="tip-btn" data-tip="bmi">Strategy ideas</button></p>
+    </div>
+  `;
+
+  fb.innerHTML = html;
+  fb.style.display = 'block';
+
+  // hook tip buttons
+  fb.querySelectorAll('.tip-btn').forEach(btn=> btn.addEventListener('click', ()=>{
+    const t = btn.getAttribute('data-tip');
+    const content = getModalContent(t, rec);
+    openModal(content.title, content.html);
+  }));
+}
+
+// ---------- Chart Rendering (small & simple) ----------
+let combinedChart = null;
+function renderChart(){
+  const ctx = document.getElementById('combinedChart').getContext('2d');
+  const data = loadData();
+  const personData = currentPerson && data[currentPerson] ? data[currentPerson] : [];
+  const labels = personData.map(r=>r.date + ' ' + r.time);
+  const scores = personData.map(r=>r.score);
+  const sleepData = personData.map(r=>r.sleep);
+  const waterData = personData.map(r=>r.water);
+  const mentalData = personData.map(r=>r.mental);
+
+  const chartData = {
+    labels,
+    datasets:[
+      { label:'Wellness Score', data:scores, borderColor:'#53C1B0', backgroundColor:'rgba(83,193,176,0.18)', tension:0.25, fill:true, pointRadius:3 },
+      { label:'Sleep (hrs)', data:sleepData, borderColor:'#6CB6FF', backgroundColor:'rgba(108,182,255,0.12)', tension:0.25, fill:true, pointRadius:2 },
+      { label:'Water (L)', data:waterData, borderColor:'#78C091', backgroundColor:'rgba(120,192,145,0.12)', tension:0.25, fill:true, pointRadius:2 },
+      { label:'Mental (1-10)', data:mentalData, borderColor:'#E6C657', backgroundColor:'rgba(230,198,87,0.12)', tension:0.25, fill:true, pointRadius:2 }
+    ]
+  };
+
+  const options = {
+    responsive:true,
+    maintainAspectRatio:false,
+    plugins:{ tooltip:{mode:'index',intersect:false}, legend:{position:'top',labels:{usePointStyle:true,pointStyle:'circle'}} },
+    interaction:{mode:'nearest',intersect:false},
+    scales:{ y:{ beginAtZero:true, max:100 } }
+  };
+
+  if(combinedChart) combinedChart.destroy();
+  combinedChart = new Chart(ctx, { type:'line', data:chartData, options });
+}
+
+// ---------- People List ----------
+function populatePeopleList(){
+  const data = loadData();
+  const sel = $('#personSelect');
+  const names = Object.keys(data);
+  sel.innerHTML = '<option value="">— Select Person —</option>';
+  names.forEach(n=>sel.innerHTML+=`<option value="${n}">${n}</option>`);
+}
+$('#personSelect').addEventListener('change', (e)=>{
+  const val = e.target.value;
+  if(val){ currentPerson=val; renderChart(); renderCalendar(); const latest = loadData()[currentPerson]?.slice(-1)[0]; if(latest) renderFeedback(latest); }
+});
+
+// ---------- Save Person Button ----------
+$('#saveBtn').addEventListener('click', ()=>{
+  showToast('Person saved! ✅');
+  // clear form
+  $('#name').value=''; $('#age').value=''; $('#height').value=''; $('#weight').value='';
+  $('#food').value=''; $('#water').value=''; $('#sleep').value=''; $('#medications').value=''; $('#symptoms').value='';
+  mentalInput.value='5';
+  mentalButtons.forEach(b=>b.classList.remove('active'));
+  mentalButtons[2].classList.add('active');
+  currentPerson = '';
+  renderChart(); renderCalendar();
+  populatePeopleList();
+});
+
+// ---------- Calendar ----------
+let today = new Date();
+let calMonth = today.getMonth();
+let calYear = today.getFullYear();
+
+function renderCalendar(){
+  const grid = $('#calendarGrid');
+  grid.innerHTML='';
+  const firstDay = new Date(calYear, calMonth,1).getDay();
+  const lastDate = new Date(calYear, calMonth+1,0).getDate();
+  const data = loadData();
+  const personData = currentPerson && data[currentPerson] ? data[currentPerson] : [];
+
+  for(let i=0;i<firstDay;i++){ grid.innerHTML+='<div></div>'; }
+  for(let d=1;d<=lastDate;d++){
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayData = personData.filter(r=>r.date===dateStr);
+    let score = dayData.length ? dayData[0].score : null;
+    let colorClass = 'chip-grey';
+    if(score!==null){ if(score<50) colorClass='chip-yellow'; else if(score<80) colorClass='chip-blue'; else colorClass='chip-green'; }
+    const div = document.createElement('div');
+    div.className='cal-cell';
+    div.innerHTML=`<div class="cal-day">${d}</div>${score!==null?`<div class="score-chip ${colorClass}">${score}</div>`:''}`;
+    grid.appendChild(div);
+  }
+}
+$('#prevMonth').addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11; calYear--;} renderCalendar(); });
+$('#nextMonth').addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0; calYear++;} renderCalendar(); });
+$('#todayBtn').addEventListener('click', ()=>{ today=new Date(); calMonth=today.getMonth(); calYear=today.getFullYear(); renderCalendar(); });
+
+// ---------- Initial ----------
+populatePeopleList();
+renderCalendar();
+</script>
+</body>
+</html>
+
